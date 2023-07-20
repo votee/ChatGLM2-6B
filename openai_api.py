@@ -15,6 +15,9 @@ from typing import Any, Dict, List, Literal, Optional, Union
 from transformers import AutoTokenizer, AutoModel
 from sse_starlette.sse import ServerSentEvent, EventSourceResponse
 
+# Custom
+import json
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI): # collects GPU memory
@@ -171,13 +174,17 @@ def get_glm_embedding(text, device="cuda"):
     resp = model.transformer(**inputs, output_hidden_states=True)
     y = resp.last_hidden_state
     y_mean = torch.mean(y, dim=0, keepdim=True)
-    return y_mean.cpu().detach().numpy()
+    result = y_mean.cpu().detach().numpy()
+    print(f"get_glm_embedding result={result}", flush=True)
+    return result
   
 
 @app.get("/v1/embeddings")
 async def create_embeddings(text: str):
     result = get_glm_embedding(text)
-    return result
+    json_str = json.dumps(result.tolist())
+    print(f"create_embeddings json_str={json_str}", flush=True)
+    return json_str
 
 
 if __name__ == "__main__":
