@@ -164,6 +164,20 @@ async def predict(query: str, history: List[List[str]], model_id: str):
     yield "{}".format(chunk.json(exclude_unset=True, ensure_ascii=False))
     yield '[DONE]'
 
+def get_glm_embedding(text, device="cuda:1"):
+    global model, tokenizer
+    
+    inputs = tokenizer([text], return_tensors="pt").to(device)
+    resp = model.transformer(**inputs, output_hidden_states=True)
+    y = resp.last_hidden_state
+    y_mean = torch.mean(y, dim=0, keepdim=True)
+    return y_mean.cpu().detach().numpy()
+  
+
+@app.get("/v1/embeddings")
+async def create_embeddings(text: str):
+    result = get_glm_embedding(text)
+    return result
 
 
 if __name__ == "__main__":
