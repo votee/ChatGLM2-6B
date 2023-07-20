@@ -164,7 +164,7 @@ async def predict(query: str, history: List[List[str]], model_id: str):
     yield "{}".format(chunk.json(exclude_unset=True, ensure_ascii=False))
     yield '[DONE]'
 
-def get_glm_embedding(text, device="cuda:1"):
+def get_glm_embedding(text, device="cuda"):
     global model, tokenizer
     
     inputs = tokenizer([text], return_tensors="pt").to(device)
