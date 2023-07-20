@@ -175,16 +175,17 @@ def get_glm_embedding(text, device="cuda"):
     y = resp.last_hidden_state
     y_mean = torch.mean(y, dim=0, keepdim=True)
     result = y_mean.cpu().detach().numpy()
-    print(f"get_glm_embedding result={result}", flush=True)
     return result
   
 
 @app.get("/v1/embeddings")
 async def create_embeddings(text: str):
-    result = get_glm_embedding(text)
-    json_str = json.dumps(result.tolist())
-    print(f"create_embeddings json_str={json_str}", flush=True)
-    return json_str
+    embedding_obj = get_glm_embedding(text)
+    embedding_list = embedding_obj.tolist()
+    return_dict = {"data": {"embedding": embedding_list}}
+    json_dict = json.dumps(return_dict)
+    # print(f"create_embeddings json_str={json_str}", flush=True)
+    return json_dict
 
 
 if __name__ == "__main__":
