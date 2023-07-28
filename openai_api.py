@@ -14,11 +14,13 @@ from contextlib import asynccontextmanager
 from typing import Any, Dict, List, Literal, Optional, Union
 from transformers import AutoTokenizer, AutoModel
 from sse_starlette.sse import ServerSentEvent, EventSourceResponse
-from typing_extensions import Annotated
 
 # Custom
+import os
 import json
-
+from typing_extensions import Annotated
+from dotenv import load_dotenv
+load_dotenv()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI): # collects GPU memory
@@ -206,4 +208,4 @@ if __name__ == "__main__":
     # model = load_model_on_gpus("THUDM/chatglm2-6b", num_gpus=2)
     model.eval()
 
-    uvicorn.run(app, host='0.0.0.0', port=8000, workers=1)
+    uvicorn.run(app, host='0.0.0.0', port=os.environ.get("PORT", 8000), workers=1)
