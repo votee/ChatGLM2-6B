@@ -177,8 +177,8 @@ def get_glm_embedding(text, device="cuda"):
     result = y_mean.cpu().detach().numpy()
     return result
   
-
-@app.get("/v1/embeddings")
+  
+@app.post("/v1/embeddings")
 async def create_embeddings(text: str):
     embedding_obj = get_glm_embedding(text)
     embedding_list = embedding_obj.tolist()
