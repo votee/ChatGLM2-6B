@@ -4,6 +4,9 @@ from pydantic import ValidationError
 from datetime import datetime
 from jose import jwt, JWTError
 from service.auth.schema import AppAuthError, AppTokenPayload
+from dotenv import load_dotenv
+
+load_dotenv()
 
 ALGORITHM = "HS256"
 JWT_SECRET_KEY = os.environ['JWT_SECRET_KEY'] # should be kept secret
