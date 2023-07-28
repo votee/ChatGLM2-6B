@@ -104,7 +104,7 @@ def get_current_user_deps(token: Annotated[str, Depends(api_key_header)]):
         raise HTTPException(status_code=401, detail="Invalid token")
 
 @app.get("/v1/models", response_model=ModelList)
-async def list_models():
+async def list_models(_: Annotated[str, Depends(api_key_header)]):
     global model_args
     model_card = ModelCard(id="gpt-3.5-turbo")
     return ModelList(data=[model_card])
