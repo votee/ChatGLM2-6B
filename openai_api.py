@@ -8,7 +8,7 @@ import time
 import torch
 import uvicorn
 from pydantic import BaseModel, Field
-from fastapi import FastAPI, HTTPException, Body, Depends, status
+from fastapi import FastAPI, HTTPException, Body
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from typing import Any, Dict, List, Literal, Optional, Union
@@ -20,10 +20,6 @@ import os
 import json
 from typing_extensions import Annotated
 from dotenv import load_dotenv
-from service.auth.schema import AppUser
-from service.auth.bearer_or_apikey_header import OAuth2PasswordBearerOrApiKeyHeader
-from service.auth.app_auth import find_user
-
 load_dotenv()
 
 @asynccontextmanager
@@ -95,37 +91,17 @@ class ChatCompletionResponse(BaseModel):
     object: Literal["chat.completion", "chat.completion.chunk"]
     choices: List[Union[ChatCompletionResponseChoice, ChatCompletionResponseStreamChoice]]
     created: Optional[int] = Field(default_factory=lambda: int(time.time()))
-    
-reuseable_oauth = OAuth2PasswordBearerOrApiKeyHeader(
-    tokenUrl="/login",
-    scheme_name="JWT"
-)
 
-
-def get_current_user(token: str) -> AppUser:
-    user_or_error = find_user(token=token)
-    if isinstance(user_or_error, AppUser):
-        user: AppUser = user_or_error
-        return user
-    print(user_or_error)
-    raise HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Not authenticated",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-
-def get_current_user_deps(token: Annotated[str, Depends(reuseable_oauth)]) -> AppUser:
-    return get_current_user(token=token)
 
 @app.get("/v1/models", response_model=ModelList)
-async def list_models(_: Annotated[AppUser, Depends(get_current_user_deps)]):
+async def list_models():
     global model_args
     model_card = ModelCard(id="gpt-3.5-turbo")
     return ModelList(data=[model_card])
 
 
 @app.post("/v1/chat/completions", response_model=ChatCompletionResponse)
-async def create_chat_completion(_: Annotated[AppUser, Depends(get_current_user_deps)],request: ChatCompletionRequest):
+async def create_chat_completion(request: ChatCompletionRequest):
     global model, tokenizer
 
     if request.messages[-1].role != "user":
@@ -206,7 +182,7 @@ def get_glm_embedding(text, device="cuda"):
   
   
 @app.post("/v1/embeddings")
-async def create_embeddings(_: Annotated[AppUser, Depends(get_current_user_deps)], text: Annotated[str, Body(embed=True)]):
+async def create_embeddings(text: Annotated[str, Body(embed=True)]):
     embedding_obj = get_glm_embedding(text)
     embedding_list = embedding_obj.tolist()
     return_dict = {"data": {"embedding": embedding_list}}
