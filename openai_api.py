@@ -182,15 +182,6 @@ def get_glm_embedding(text, device="cuda"):
   
   
 @app.post("/v1/embeddings")
-async def create_embeddings(text: str):
-    embedding_obj = get_glm_embedding(text)
-    embedding_list = embedding_obj.tolist()
-    return_dict = {"data": {"embedding": embedding_list}}
-    json_dict = json.dumps(return_dict)
-    # print(f"create_embeddings json_str={json_str}", flush=True)
-    return json_dict
-  
-@app.post("/v1/embeddings/test")
 async def create_embeddings(text: Annotated[str, Body(embed=True)]):
     embedding_obj = get_glm_embedding(text)
     embedding_list = embedding_obj.tolist()
