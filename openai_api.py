@@ -8,7 +8,7 @@ import time
 import torch
 import uvicorn
 from pydantic import BaseModel, Field
-from fastapi import FastAPI, HTTPException, Body
+from fastapi import FastAPI, HTTPException, Body, Header, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from typing import Any, Dict, List, Literal, Optional, Union
@@ -20,6 +20,8 @@ import os
 import json
 from typing_extensions import Annotated
 from dotenv import load_dotenv
+from starlette import status
+
 load_dotenv()
 
 @asynccontextmanager
@@ -92,16 +94,33 @@ class ChatCompletionResponse(BaseModel):
     choices: List[Union[ChatCompletionResponseChoice, ChatCompletionResponseStreamChoice]]
     created: Optional[int] = Field(default_factory=lambda: int(time.time()))
 
+token = os.environ.get("ACCESS_TOKEN", "")
+known_tokens = set([token])
 
-@app.get("/v1/models", response_model=ModelList)
-async def list_models():
+class UnauthorizedMessage(BaseModel):
+    detail: str = "Bearer token missing or unknown"
+
+async def get_token(
+    authorization: str = Header(default="Bearer "),
+) -> str:
+    _, token = authorization.split(" ")
+    # Simulate a database query to find a known token
+    if token not in known_tokens:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=UnauthorizedMessage().detail,
+        )
+    return token
+
+@app.get("/v1/models", response_model=ModelList, responses={status.HTTP_401_UNAUTHORIZED: {"model": UnauthorizedMessage}})
+async def list_models(_: str = Depends(get_token)):
     global model_args
     model_card = ModelCard(id="gpt-3.5-turbo")
     return ModelList(data=[model_card])
 
 
 @app.post("/v1/chat/completions", response_model=ChatCompletionResponse)
-async def create_chat_completion(request: ChatCompletionRequest):
+async def create_chat_completion(_: str = Depends(get_token), request: ChatCompletionRequest = None):
     global model, tokenizer
 
     if request.messages[-1].role != "user":
@@ -182,7 +201,7 @@ def get_glm_embedding(text, device="cuda"):
   
   
 @app.post("/v1/embeddings")
-async def create_embeddings(text: Annotated[str, Body(embed=True)]):
+async def create_embeddings(_: str = Depends(get_token), text: Annotated[str, Body(embed=True)] = None):
     embedding_obj = get_glm_embedding(text)
     embedding_list = embedding_obj.tolist()
     return_dict = {"data": {"embedding": embedding_list}}
