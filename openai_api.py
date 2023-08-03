@@ -112,7 +112,7 @@ async def list_models(_: Annotated[str, Depends(api_key_header)]):
     return ModelList(data=[model_card])
 
 
-@app.post("/v1/chat/completions")
+@app.post("/v1/chat/completions", response_model=ChatCompletionResponse)
 async def create_chat_completion(_: Annotated[str, Depends(api_key_header)], request: ChatCompletionRequest = None):
     global model, tokenizer
 
@@ -141,8 +141,8 @@ async def create_chat_completion(_: Annotated[str, Depends(api_key_header)], req
         finish_reason="stop"
     )
 
-    # return ChatCompletionResponse(model=request.model, choices=[choice_data], object="chat.completion")
-    return JSONResponse(content={"model": request.model, "choices":[choice_data], "object":"chat.completion"}, media_type="application/json")
+    return ChatCompletionResponse(model=request.model, choices=[choice_data], object="chat.completion")
+    #return JSONResponse(content={"model": request.model, "choices":[choice_data], "object":"chat.completion"}, media_type="application/json")
 
 
 async def predict(query: str, history: List[List[str]], model_id: str):
@@ -200,7 +200,7 @@ def get_glm_embedding(text, device="cuda"):
     # result = y_mean.cpu().detach().numpy()
     # return result
     with torch.no_grad():
-        model_output = model_embedding(**encoded_input)
+        model_output = model(**encoded_input)
         # Perform pooling. In this case, mean pooling.
     sentence_embeddings = mean_pooling(model_output, encoded_input['attention_mask'])
     print("Sentence embeddings:", flush=True)
