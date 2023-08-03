@@ -200,7 +200,7 @@ def get_glm_embedding(text, device="cuda"):
     # result = y_mean.cpu().detach().numpy()
     # return result
     with torch.no_grad():
-        model_output = model(**encoded_input)
+        model_output = model_embedding(**encoded_input)
         # Perform pooling. In this case, mean pooling.
     sentence_embeddings = mean_pooling(model_output, encoded_input['attention_mask'])
     print("Sentence embeddings:", flush=True)
