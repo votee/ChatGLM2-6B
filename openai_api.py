@@ -210,7 +210,7 @@ def get_glm_embedding(text, device="cuda"):
 async def create_embeddings(_: Annotated[str, Depends(api_key_header)], text: Annotated[str, Body(embed=True)] = None):
     embedding_obj = get_glm_embedding(text)
     embedding_list = embedding_obj.tolist()
-    return_dict = {"data": {"embedding": embedding_list}}
+    return_dict = {"data": {"embedding": [embedding_list]}}
     json_dict = json.dumps(return_dict)
     # print(f"create_embeddings json_str={json_str}", flush=True)
     return json_dict
