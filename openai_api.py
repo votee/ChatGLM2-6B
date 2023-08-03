@@ -219,8 +219,10 @@ async def create_embeddings(_: Annotated[str, Depends(api_key_header)], text: An
 
 
 if __name__ == "__main__":
-    tokenizer = AutoTokenizer.from_pretrained("THUDM/chatglm2-6b", trust_remote_code=True)
-    model = AutoModel.from_pretrained("THUDM/chatglm2-6b", trust_remote_code=True).cuda()
+    # tokenizer = AutoTokenizer.from_pretrained("THUDM/chatglm2-6b", trust_remote_code=True)
+    # model = AutoModel.from_pretrained("THUDM/chatglm2-6b", trust_remote_code=True).cuda()
+    tokenizer = AutoTokenizer.from_pretrained("THUDM/chatglm2-6b-32k", trust_remote_code=True)
+    model = AutoModel.from_pretrained("THUDM/chatglm2-6b-32k", trust_remote_code=True).cuda()
     tokenizer_embedding = BertTokenizer.from_pretrained("./text2vec-large-chinese/vocab.txt", trust_remote_code=True,local_files_only=True)
     model_embedding = BertModel.from_pretrained("./text2vec-large-chinese/pytorch_model.bin",config='./text2vec-large-chinese/config.json', trust_remote_code=True, local_files_only=True).cuda()
     # 多显卡支持，使用下面两行代替上面一行，将num_gpus改为你实际的显卡数量
