@@ -190,17 +190,17 @@ def mean_pooling(model_output, attention_mask):
 
 
 def get_glm_embedding(text, device="cuda"):
-    global model, tokenizer
+    global model_embedding, tokenizer_embedding
     
     # inputs = tokenizer([text], return_tensors="pt").to(device)
-    encoded_input = tokenizer([text], padding=True, truncation=True, return_tensors="pt").to(device)
+    encoded_input = tokenizer_embedding([text], padding=True, truncation=True, return_tensors="pt").to(device)
     # resp = model.transformer(**inputs, output_hidden_states=True)
     # y = resp.last_hidden_state
     # y_mean = torch.mean(y, dim=0, keepdim=True)
     # result = y_mean.cpu().detach().numpy()
     # return result
     with torch.no_grad():
-        model_output = model(**encoded_input)
+        model_output = model_embedding(**encoded_input)
         # Perform pooling. In this case, mean pooling.
     sentence_embeddings = mean_pooling(model_output, encoded_input['attention_mask'])
     print("Sentence embeddings:", flush=True)
@@ -219,10 +219,10 @@ async def create_embeddings(_: Annotated[str, Depends(api_key_header)], text: An
 
 
 if __name__ == "__main__":
-    #tokenizer = AutoTokenizer.from_pretrained("THUDM/chatglm2-6b", trust_remote_code=True)
-    #model = AutoModel.from_pretrained("THUDM/chatglm2-6b", trust_remote_code=True).cuda()
-    tokenizer = BertTokenizer.from_pretrained("./text2vec-large-chinese/vocab.txt", trust_remote_code=True,local_files_only=True)
-    model = BertModel.from_pretrained("./text2vec-large-chinese/pytorch_model.bin",config='./text2vec-large-chinese/config.json', trust_remote_code=True, local_files_only=True).cuda()
+    tokenizer = AutoTokenizer.from_pretrained("THUDM/chatglm2-6b", trust_remote_code=True)
+    model = AutoModel.from_pretrained("THUDM/chatglm2-6b", trust_remote_code=True).cuda()
+    tokenizer_embedding = BertTokenizer.from_pretrained("./text2vec-large-chinese/vocab.txt", trust_remote_code=True,local_files_only=True)
+    model_embedding = BertModel.from_pretrained("./text2vec-large-chinese/pytorch_model.bin",config='./text2vec-large-chinese/config.json', trust_remote_code=True, local_files_only=True).cuda()
     # 多显卡支持，使用下面两行代替上面一行，将num_gpus改为你实际的显卡数量
     # from utils import load_model_on_gpus
     # model = load_model_on_gpus("THUDM/chatglm2-6b", num_gpus=2)
