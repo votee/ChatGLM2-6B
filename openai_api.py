@@ -112,7 +112,7 @@ async def list_models(_: Annotated[str, Depends(api_key_header)]):
     return ModelList(data=[model_card])
 
 
-@app.post("/v1/chat/completions", response_model=ChatCompletionResponse)
+@app.post("/v1/chat/completions")
 async def create_chat_completion(_: Annotated[str, Depends(api_key_header)], request: ChatCompletionRequest = None):
     global model, tokenizer
 
