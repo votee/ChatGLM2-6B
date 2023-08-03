@@ -23,6 +23,7 @@ from dotenv import load_dotenv
 from starlette import status
 from fastapi.security import APIKeyHeader
 from transformers import BertTokenizer, BertModel
+from fastapi.responses import JSONResponse
 
 load_dotenv()
 
@@ -140,7 +141,8 @@ async def create_chat_completion(_: Annotated[str, Depends(api_key_header)], req
         finish_reason="stop"
     )
 
-    return ChatCompletionResponse(model=request.model, choices=[choice_data], object="chat.completion")
+    # return ChatCompletionResponse(model=request.model, choices=[choice_data], object="chat.completion")
+    return JSONResponse(content={"model": request.model, "choices":[choice_data], "object":"chat.completion"}, media_type="application/json")
 
 
 async def predict(query: str, history: List[List[str]], model_id: str):
