@@ -22,7 +22,6 @@ from typing_extensions import Annotated
 from dotenv import load_dotenv
 from starlette import status
 from fastapi.security import APIKeyHeader
-from transformers import BertTokenizer, BertModel
 
 load_dotenv()
 
@@ -180,30 +179,16 @@ async def predict(query: str, history: List[List[str]], model_id: str):
     chunk = ChatCompletionResponse(model=model_id, choices=[choice_data], object="chat.completion.chunk")
     yield "{}".format(chunk.json(exclude_unset=True, ensure_ascii=False))
     yield '[DONE]'
-    
-def mean_pooling(model_output, attention_mask):
-    token_embeddings = model_output[0]  # First element of model_output contains all token embeddings
-    input_mask_expanded = attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
-    return torch.sum(token_embeddings * input_mask_expanded, 1) / torch.clamp(input_mask_expanded.sum(1), min=1e-9)
-
 
 def get_glm_embedding(text, device="cuda"):
     global model, tokenizer
     
-    # inputs = tokenizer([text], return_tensors="pt").to(device)
-    encoded_input = tokenizer([text], padding=True, truncation=True, return_tensors="pt").to(device)
-    # resp = model.transformer(**inputs, output_hidden_states=True)
-    # y = resp.last_hidden_state
-    # y_mean = torch.mean(y, dim=0, keepdim=True)
-    # result = y_mean.cpu().detach().numpy()
-    # return result
-    with torch.no_grad():
-        model_output = model(**encoded_input)
-        # Perform pooling. In this case, mean pooling.
-    sentence_embeddings = mean_pooling(model_output, encoded_input['attention_mask'])
-    print("Sentence embeddings:", flush=True)
-    print(sentence_embeddings, flush=True)
-    return sentence_embeddings
+    inputs = tokenizer([text], return_tensors="pt").to(device)
+    resp = model.transformer(**inputs, output_hidden_states=True)
+    y = resp.last_hidden_state
+    y_mean = torch.mean(y, dim=0, keepdim=True)
+    result = y_mean.cpu().detach().numpy()
+    return result
   
   
 @app.post("/v1/embeddings")
@@ -217,13 +202,11 @@ async def create_embeddings(_: Annotated[str, Depends(api_key_header)], text: An
 
 
 if __name__ == "__main__":
-    #tokenizer = AutoTokenizer.from_pretrained("THUDM/chatglm2-6b", trust_remote_code=True)
-    #model = AutoModel.from_pretrained("THUDM/chatglm2-6b", trust_remote_code=True).cuda()
-    tokenizer = BertTokenizer.from_pretrained("./text2vec-large-chinese/vocab.txt", trust_remote_code=True,local_files_only=True)
-    model = BertModel.from_pretrained("./text2vec-large-chinese/pytorch_model.bin",config='./text2vec-large-chinese/config.json', trust_remote_code=True, local_files_only=True).cuda()
+    tokenizer = AutoTokenizer.from_pretrained("./model", trust_remote_code=True)
+    model = AutoModel.from_pretrained("./model", trust_remote_code=True).cuda()
     # 多显卡支持，使用下面两行代替上面一行，将num_gpus改为你实际的显卡数量
     # from utils import load_model_on_gpus
     # model = load_model_on_gpus("THUDM/chatglm2-6b", num_gpus=2)
-    #model.eval()
+    model.eval()
 
     uvicorn.run(app, host='0.0.0.0', port=int(os.environ.get("PORT", 8000)), workers=1)
