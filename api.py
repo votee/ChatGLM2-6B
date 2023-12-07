@@ -57,4 +57,4 @@ if __name__ == '__main__':
     # tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
     # model = load_model_on_gpus(model_path, num_gpus=2)
     model.eval()
-    uvicorn.run(app, host='0.0.0.0', port=8000, workers=1)
+    uvicorn.run(app, host='0.0.0.0', port=8001, workers=1)
