@@ -113,7 +113,7 @@ async def list_models(_: Annotated[str, Depends(api_key_header)]):
 
 
 @app.post("/v1/chat/completions", response_model=ChatCompletionResponse)
-async def create_chat_completion(_: Annotated[str, Depends(api_key_header)], request: ChatCompletionRequest = None):
+async def create_chat_completion(request: ChatCompletionRequest = None):
     global model, tokenizer
 
     if request.messages[-1].role != "user":
@@ -193,7 +193,7 @@ def get_glm_embedding(text, device="cuda"):
     global model_embedding, tokenizer_embedding
     
     # inputs = tokenizer([text], return_tensors="pt").to(device)
-    encoded_input = tokenizer_embedding([text], padding=True, truncation=True, return_tensors="pt").to(device)
+    encoded_input = tokenizer_embedding(text, padding=True, truncation=True, return_tensors="pt").to(device)
     # resp = model.transformer(**inputs, output_hidden_states=True)
     # y = resp.last_hidden_state
     # y_mean = torch.mean(y, dim=0, keepdim=True)
@@ -209,8 +209,13 @@ def get_glm_embedding(text, device="cuda"):
   
   
 @app.post("/v1/embeddings")
-async def create_embeddings(_: Annotated[str, Depends(api_key_header)], text: Annotated[str, Body(embed=True)] = None):
-    embedding_obj = get_glm_embedding(text)
+# async def create_embeddings(_: Annotated[str, Depends(api_key_header)], text: Annotated[str, Body(embed=True)] = None):
+async def create_embeddings(
+    # _: Annotated[str, Depends(api_key_header)], 
+    # text: Annotated[str, Body(embed=True)] = None
+    input: List[str] = Body(..., embed=True)
+):
+    embedding_obj = get_glm_embedding(input)
     embedding_list = embedding_obj.tolist()
     return_dict = {"data": {"embedding": [embedding_list]}}
     json_dict = json.dumps(return_dict)
